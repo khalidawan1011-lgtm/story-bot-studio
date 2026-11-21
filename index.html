@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>Story Bot Studio — status</title>
+
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0d1020">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Story Bot">
+
+<style>
+  :root { --bg:#0b0f1e; --card:#141a2f; --card2:#0f1426; --line:#242c4a; --text:#e9edff;
+          --muted:#909abf; --accent:#6d8dff; --ok:#3ddc97; --warn:#ffcc66; --bad:#ff7b7b;
+          --ok-bg:rgba(61,220,151,.14); --warn-bg:rgba(255,204,102,.14); --bad-bg:rgba(255,123,123,.14);
+          --chip:#232c52; --chip-text:#bccbff; --shadow:0 1px 2px rgba(0,0,0,.25); }
+  @media (prefers-color-scheme: light) {
+    :root { --bg:#f3f5fb; --card:#ffffff; --card2:#f4f6fc; --line:#dfe4f2; --text:#151a2d;
+            --muted:#5d6788; --accent:#3d5bd9; --ok:#0f8a56; --warn:#9a6700; --bad:#c62f2f;
+            --ok-bg:#dff5ea; --warn-bg:#fdf0d0; --bad-bg:#fde3e3;
+            --chip:#e7ebfa; --chip-text:#33427d; --shadow:0 1px 3px rgba(20,30,70,.08); }
+  }
+  * { box-sizing:border-box }
+  html { -webkit-text-size-adjust:100% }
+  body { margin:0; background:var(--bg); color:var(--text);
+         font:15px/1.5 -apple-system,"Segoe UI",Roboto,system-ui,sans-serif; }
+  a { color:var(--accent); text-decoration:none } a:hover { text-decoration:underline }
+  .wrap { max-width:1120px; margin:0 auto; padding:0 16px }
+  .top { position:sticky; top:0; z-index:5; background:color-mix(in srgb, var(--bg) 88%, transparent);
+         backdrop-filter:blur(10px); border-bottom:1px solid var(--line) }
+  .top .wrap { display:flex; align-items:center; justify-content:space-between; gap:8px 16px;
+               flex-wrap:wrap; padding-top:12px; padding-bottom:12px }
+  .brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px }
+  .brand i { width:28px; height:28px; border-radius:9px; flex:0 0 auto;
+             background:linear-gradient(135deg,#6d8dff,#b07cff) }
+  .top-meta { color:var(--muted); font-size:13px; display:flex; gap:4px 14px; flex-wrap:wrap }
+  .top-meta b { color:var(--text); font-weight:600 }
+  main.wrap { padding-top:16px; padding-bottom:8px }
+  h2 { font-size:13px; margin:0 0 12px; color:var(--muted); text-transform:uppercase; letter-spacing:.07em }
+  h2 small { text-transform:none; letter-spacing:0; font-weight:400 }
+  h2.section { margin:22px 0 10px }
+  h3 { font-size:17px; margin:0; line-height:1.25 }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px;
+          box-shadow:var(--shadow); min-width:0 }
+  .muted { color:var(--muted); font-size:13px }
+  .eyebrow { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.07em }
+  .empty { color:var(--muted); font-size:14px; padding:6px 0 }
+
+  /* Its inline display:flex would otherwise show the bar even while hidden. */
+  #install-bar[hidden] { display:none !important }
+  #install-bar { max-width:none !important; margin:0 0 14px !important; background:var(--card) !important;
+                 border-color:var(--accent) !important; border-radius:14px !important }
+
+  .banner { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+            background:var(--card); border:1px solid var(--line); border-left:4px solid var(--ok);
+            border-radius:14px; padding:14px 16px; margin-bottom:14px }
+  .banner.warn { border-left-color:var(--warn) } .banner.bad { border-left-color:var(--bad) }
+  .banner-line { margin-top:2px }
+  .btn { display:inline-block; padding:8px 14px; border-radius:10px; border:1px solid var(--line);
+         background:var(--card2); color:var(--text); font-weight:600; font-size:13px; white-space:nowrap }
+  .btn:hover { text-decoration:none; border-color:var(--accent) }
+
+  .kpis { display:grid; gap:12px; grid-template-columns:repeat(2,minmax(0,1fr)) }
+  .kpi { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px 16px;
+         box-shadow:var(--shadow) }
+  .kpi .num { font-size:34px; font-weight:700; line-height:1.1; margin:4px 0 2px;
+              font-variant-numeric:tabular-nums }
+  .kpi.ok .num { color:var(--ok) } .kpi.warn .num { color:var(--warn) } .kpi.bad .num { color:var(--bad) }
+
+  .grid { display:grid; gap:14px; grid-template-columns:1fr }
+  .channel { display:flex; flex-direction:column; gap:12px }
+  .channel-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap }
+  .plats { display:flex; gap:6px; flex-wrap:wrap }
+  .plat { font-size:11px; font-weight:600; padding:2px 8px; border-radius:99px;
+          border:1px solid var(--line); color:var(--muted) }
+  .plat.on { background:var(--ok-bg); border-color:transparent; color:var(--ok) }
+  .acct-top { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:6px }
+  .acct-name { color:var(--muted); font-size:13px }
+  .acct-count { font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--text) }
+  .acct-count small { font-size:13px; font-weight:500; color:var(--muted) }
+  .acct-count.full { color:var(--warn) }
+  .bar { height:8px; background:var(--card2); border-radius:99px; overflow:hidden }
+  .bar i { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#5b7bff,#9a7dff) }
+  .facts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:0 }
+  .facts dt { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.05em }
+  .facts dd { margin:0; font-size:13px; font-weight:600; overflow-wrap:anywhere }
+  .last { background:var(--card2); border-radius:12px; padding:10px 12px; margin-top:auto }
+  .last-top { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap }
+  .last-title { font-size:14px; font-weight:600; margin-top:4px; overflow-wrap:anywhere;
+                display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden }
+  .last.bad b { color:var(--bad) }
+  .reason { color:var(--muted); font-size:12px; margin-top:4px; overflow-wrap:anywhere }
+
+  .pill { display:inline-block; font-size:12px; font-weight:600; padding:2px 9px; border-radius:99px;
+          background:var(--chip); color:var(--chip-text) }
+  .pill.ok { background:var(--ok-bg); color:var(--ok) } .pill.warn { background:var(--warn-bg); color:var(--warn) }
+  .pill.bad { background:var(--bad-bg); color:var(--bad) }
+  .plat-line { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px }
+  .chip { background:var(--chip); color:var(--chip-text); border-radius:99px; padding:1px 9px; font-size:12px }
+  .meta { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:6px }
+
+  .cols { display:grid; gap:14px; grid-template-columns:1fr; margin-top:14px }
+  .stack { display:grid; gap:14px; margin-top:14px }
+  .rows { list-style:none; margin:0; padding:0 }
+  .row { display:flex; flex-direction:column; gap:8px; padding:12px 0; border-top:1px solid var(--line) }
+  .row:first-child { border-top:0; padding-top:0 } .row:last-child { padding-bottom:0 }
+  .row-main { min-width:0 } .row-title { font-weight:600; font-size:14px; overflow-wrap:anywhere }
+  .row-side { display:flex; align-items:center; gap:10px; flex-wrap:wrap }
+  .when { color:var(--muted); font-size:13px; white-space:nowrap }
+  .url { display:block; margin-top:6px; font-size:12px; overflow-wrap:anywhere }
+  .alert { border-left:4px solid var(--bad); margin-top:14px }
+  .row.with-thumb { flex-direction:row; align-items:flex-start; gap:12px }
+  .rthumb { width:128px; aspect-ratio:16/9; object-fit:cover; border-radius:8px; flex:none; background:var(--line) }
+  .rthumb.none { display:grid; place-items:center; font-size:11px; color:var(--muted) }
+  .with-thumb .row-main { flex:1 } .with-thumb .row-side { margin-top:6px }
+  .tls { display:grid; gap:6px; margin-top:8px }
+  .tl { font-size:12px } .tl-name { font-weight:700; margin-bottom:2px }
+  .tl-step { color:var(--muted); display:flex; gap:6px; align-items:baseline; flex-wrap:wrap }
+  .tl-step b { color:var(--text, inherit) }
+  .tl-step i { width:7px; height:7px; border-radius:50%; flex:none; display:inline-block }
+  .tl-step.done i { background:var(--ok) } .tl-step.wait i { background:var(--warn) }
+  .tl-step.fail i { background:var(--bad) }
+  @media (max-width:520px) { .rthumb { width:96px } }
+
+  .tbl { overflow-x:auto; margin:0 -16px; padding:0 16px }
+  table { width:100%; border-collapse:collapse; font-size:14px }
+  td, th { padding:8px 8px; border-top:1px solid var(--line); text-align:center; white-space:nowrap;
+           font-variant-numeric:tabular-nums }
+  thead th { border-top:0; color:var(--muted); font-size:12px; font-weight:600 }
+  tbody th { text-align:left; font-weight:500; color:var(--muted) }
+  thead th:first-child { text-align:left }
+  .heat { display:inline-block; min-width:30px; padding:2px 6px; border-radius:8px;
+          background:color-mix(in srgb, var(--accent) calc(var(--a) * 45%), transparent) }
+  td.total { font-weight:700 }
+
+  .vids { display:grid; gap:10px; grid-template-columns:1fr }
+  .vid { display:flex; gap:12px; padding:8px; border-radius:12px; color:inherit; min-width:0 }
+  .vid:hover { background:var(--card2); text-decoration:none }
+  .vid img, .noimg { width:128px; aspect-ratio:16/9; object-fit:cover; border-radius:10px;
+                     background:var(--card2); flex:0 0 auto }
+  .vid-body { min-width:0 }
+  .vid-title { font-size:14px; font-weight:600; overflow-wrap:anywhere;
+               display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden }
+  footer.wrap { color:var(--muted); font-size:13px; padding-top:22px; padding-bottom:28px }
+
+  @media (min-width:640px) {
+    .grid { grid-template-columns:repeat(2,minmax(0,1fr)) }
+    .vids { grid-template-columns:repeat(2,minmax(0,1fr)) }
+    .row { flex-direction:row; justify-content:space-between; align-items:flex-start; gap:16px }
+    .row-side { flex-direction:column; align-items:flex-end; gap:4px; flex:0 0 auto; text-align:right }
+  }
+  @media (min-width:900px) {
+    body { font-size:16px }
+    .kpis { grid-template-columns:repeat(4,minmax(0,1fr)) }
+    .grid { grid-template-columns:repeat(3,minmax(0,1fr)) }
+    .cols { grid-template-columns:minmax(0,3fr) minmax(0,2fr); align-items:start }
+    .vids { grid-template-columns:repeat(3,minmax(0,1fr)) }
+    .vid { flex-direction:column; gap:8px } .vid img, .noimg { width:100% }
+  }
+</style></head><body>
+<header class="top"><div class="wrap">
+  <div class="brand"><i></i>Story Bot Studio</div>
+  <div class="top-meta"><span>Updated <b>21 Nov 2026, 07:52 PM PKT</b></span><span>Next run <b>21 Nov, 09:30 PM</b></span></div>
+</div></header>
+
+<main class="wrap">
+  
+<div id="install-bar" hidden style="max-width:900px;margin:0 auto 14px;padding:12px 14px;border-radius:12px;
+  background:#16224a;border:1px solid #2c3d78;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+  <span id="install-text">📲 Install Story Bot as an app on this phone</span>
+  <button id="install-btn" style="background:#4f7dff;color:#fff;border:0;border-radius:10px;padding:9px 14px;font-weight:600">Install</button>
+</div>
+<script>
+(function () {
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+  var bar = document.getElementById('install-bar'), btn = document.getElementById('install-btn'), prompt = null;
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (standalone) return;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault(); prompt = e; bar.hidden = false;
+  });
+  btn.addEventListener('click', function () {
+    if (!prompt) return;
+    prompt.prompt(); prompt.userChoice.finally(function () { bar.hidden = true; prompt = null; });
+  });
+  if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
+    document.getElementById('install-text').textContent = '📲 iPhone: tap Share, then “Add to Home Screen”';
+    btn.hidden = true; bar.hidden = false;
+  }
+})();
+</script>
+
+  
+    <section class="banner ok">
+      <div><div class="eyebrow">Last run</div>
+      <div class="banner-line"><b>1 video built</b> · 21 Nov, 11:15 AM PKT, on GitHub</div></div>
+      <a class='btn' href='https://github.com/khalidawan1011-lgtm/story-bot/actions/runs/44870879020' target='_blank' rel='noopener'>Open the run log</a>
+    </section>
+  <section class='kpis'><div class='kpi ok'><div class='eyebrow'>Uploaded today</div><div class='num'>1</div><div class='muted'>since the YouTube quota reset</div></div><div class='kpi '><div class='eyebrow'>Made in 24 hours</div><div class='num'>10</div><div class='muted'>videos built, uploaded or not</div></div><div class='kpi warn'><div class='eyebrow'>Waiting to upload</div><div class='num'>17</div><div class='muted'>go up when quota allows</div></div><div class='kpi bad'><div class='eyebrow'>Failed in 24 hours</div><div class='num'>2</div><div class='muted'>see the list below</div></div></section>
+
+  <h2 class="section">Channels</h2>
+  <div class="grid">
+    <article class="card channel">
+      <div class="channel-top"><h3>Chronovanta</h3><div class="plats"><span class='plat on'>YouTube</span><span class='plat on'>Facebook</span></div></div>
+      
+        <div class="acct">
+          <div class="acct-top">
+            <span class="acct-name">Uploaded today</span>
+            <span class="acct-count ok">1 <small>/ 4</small></span>
+          </div>
+          <div class="bar"><i style="width:25%"></i></div>
+        </div>
+      <dl class="facts"><div><dt>Daily at</dt><dd>05:30 AM PKT</dd></div><div><dt>Pictures</dt><dd>AI pictures</dd></div><div><dt>Waiting</dt><dd>nothing</dd></div></dl>
+      <div class='last'><div class='last-top'><span class='muted'>Latest video · 21 Nov, 07:18 AM</span><span class='pill ok'>Scheduled on YouTube</span></div><div class='last-title'>Could Quantum Entanglement Networks Map the Internal Structure of Black Holes? | Chronovanta</div><div class='plat-line'><span class='pill warn'>YouTube ⏳ · 22 Nov, 11:00 PM</span><span class='pill warn'>Facebook ⏳ · 22 Nov, 11:00 PM</span></div></div>
+    </article>
+    <article class="card channel">
+      <div class="channel-top"><h3>Pastveil Mysteries</h3><div class="plats"><span class='plat on'>YouTube</span></div></div>
+      
+        <div class="acct">
+          <div class="acct-top">
+            <span class="acct-name">Uploaded today</span>
+            <span class="acct-count ok">0 <small>/ 4</small></span>
+          </div>
+          <div class="bar"><i style="width:0%"></i></div>
+        </div>
+      <dl class="facts"><div><dt>Daily at</dt><dd>07:30 AM PKT</dd></div><div><dt>Pictures</dt><dd>AI pictures</dd></div><div><dt>Waiting</dt><dd>nothing</dd></div></dl>
+      <div class='last'><div class='last-top'><span class='muted'>Latest video · 21 Nov, 08:39 AM</span><span class='pill ok'>Scheduled on YouTube</span></div><div class='last-title'>The Vanishing Ink of the Vinland Map | Pastveil Mysteries | Lost Civilizations</div><div class='plat-line'><span class='pill warn'>YouTube ⏳ · 22 Nov, 10:00 PM</span></div></div>
+    </article>
+    <article class="card channel">
+      <div class="channel-top"><h3>Pondermals</h3><div class="plats"><span class='plat on'>YouTube</span><span class='plat on'>TikTok</span></div></div>
+      
+        <div class="acct">
+          <div class="acct-top">
+            <span class="acct-name">Uploaded today</span>
+            <span class="acct-count ok">0 <small>/ 4</small></span>
+          </div>
+          <div class="bar"><i style="width:0%"></i></div>
+        </div>
+      <dl class="facts"><div><dt>Daily at</dt><dd>09:30 AM PKT</dd></div><div><dt>Pictures</dt><dd>animated cartoon</dd></div><div><dt>Waiting</dt><dd>17 to upload</dd></div></dl>
+      <div class='last'><div class='last-top'><span class='muted'>Latest video · 21 Nov, 11:50 AM</span><span class='pill warn'>Built · waiting to upload</span></div><div class='last-title'>Why Tiger Pistol Shrimps Outshine the Sun | Pondermals | Animal Facts</div><div class='plat-line'><span class='pill warn'>YouTube ⏳ · 21 Nov, 09:30 PM</span><span class='pill ok'>TikTok ✓</span></div></div>
+    </article></div>
+
+  
+  
+
+  <div class="cols">
+    <section class="card">
+      <h2>Last 24 hours</h2>
+      <ul class='rows'><li class='row with-thumb'><img class='rthumb' loading='lazy' src='thumbs/62.jpg' alt=''><div class='row-main'><div class='row-title'>Why Tiger Pistol Shrimps Outshine the Sun | Pondermals | Animal Facts</div><div class='meta'><span class='chip'>pondermals</span><span class='chip'>short</span></div><div class='reason'>Held: YouTube does not allow custom thumbnails on this channel yet. Verify it at youtube.com/verify, then press &#x27;Thumbnails Are Verified&#x27;.</div><div class='row-side'><span class='pill warn'>Built · waiting to upload</span><span class='muted'>21 Nov, 11:50 AM</span></div><div class='tls'><div class='tl'><div class='tl-name'>YouTube</div><div class='tl-step wait'><i></i>Not uploaded yet · next automatic try <b>21 Nov, 09:30 PM PKT</b></div></div><div class='tl'><div class='tl-name'>TikTok</div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 11:51 AM PKT</b></div><div class='tl-step wait'><i></i>Goes live <b>22 Nov, 11:01 PM PKT</b></div></div></div></div></li><li class='row with-thumb'><img class='rthumb' loading='lazy' src='thumbs/61.jpg' alt=''><div class='row-main'><div class='row-title'>Why Pallas Cats Have Such Infuriatingly Flat Faces | Pondermals | Animal Facts</div><div class='meta'><span class='chip'>pondermals</span><span class='chip'>short</span></div><div class='reason'>Held: YouTube does not allow custom thumbnails on this channel yet. Verify it at youtube.com/verify, then press &#x27;Thumbnails Are Verified&#x27;.</div><div class='row-side'><span class='pill warn'>Built · waiting to upload</span><span class='muted'>21 Nov, 11:39 AM</span></div><div class='tls'><div class='tl'><div class='tl-name'>YouTube</div><div class='tl-step wait'><i></i>Not uploaded yet · next automatic try <b>21 Nov, 09:30 PM PKT</b></div></div><div class='tl'><div class='tl-name'>TikTok</div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 11:39 AM PKT</b></div><div class='tl-step wait'><i></i>Goes live <b>22 Nov, 06:00 PM PKT</b></div></div></div></div></li><li class='row with-thumb'><img class='rthumb' loading='lazy' src='thumbs/60.jpg' alt=''><div class='row-main'><div class='row-title'>Why Mangrove Killifish Spend Months Out of Water | Pondermals | Animal Facts</div><div class='meta'><span class='chip'>pondermals</span><span class='chip'>short</span></div><div class='reason'>Held: YouTube does not allow custom thumbnails on this channel yet. Verify it at youtube.com/verify, then press &#x27;Thumbnails Are Verified&#x27;.</div><div class='row-side'><span class='pill warn'>Built · waiting to upload</span><span class='muted'>21 Nov, 11:29 AM</span></div><div class='tls'><div class='tl'><div class='tl-name'>YouTube</div><div class='tl-step wait'><i></i>Not uploaded yet · next automatic try <b>21 Nov, 09:30 PM PKT</b></div></div><div class='tl'><div class='tl-name'>TikTok</div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 11:29 AM PKT</b></div><div class='tl-step wait'><i></i>Goes live <b>22 Nov, 04:01 AM PKT</b></div></div></div></div></li><li class='row with-thumb'><div class='rthumb none'>no thumbnail</div><div class='row-main'><div class='row-title'>The Silent Shadow of the Barn Owl | Pondermals | Animal Facts</div><div class='meta'><span class='chip'>pondermals</span><span class='chip'>long</span></div><div class='reason'>The video was built but could not be uploaded at the time, and its files were only kept for two days.</div><div class='row-side'><span class='pill bad'>Not uploaded · video files expired</span><span class='muted'>21 Nov, 11:15 AM</span></div><div class='tls'><div class='tl'><div class='tl-name'>YouTube</div><div class='tl-step fail'><i></i>Will not upload (files lost)</div></div><div class='tl'><div class='tl-name'>TikTok</div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 11:15 AM PKT</b></div><div class='tl-step wait'><i></i>Goes live <b>22 Nov, 06:30 AM PKT</b></div></div></div></div></li><li class='row with-thumb'><div class='rthumb none'>no thumbnail</div><div class='row-main'><div class='row-title'><a href='https://www.youtube.com/watch?v=JMaAKcqX9oI' target='_blank' rel='noopener'>The Vanishing Ink of the Vinland Map | Pastveil Mysteries | Lost Civilizations</a></div><div class='meta'><span class='chip'>pastveil_mysteries</span><span class='chip'>short</span></div><div class='row-side'><span class='pill ok'>Scheduled on YouTube</span><span class='muted'>22 Nov, 10:00 PM</span></div><div class='tls'><div class='tl'><div class='tl-name'><a href='https://www.youtube.com/watch?v=JMaAKcqX9oI' target='_blank' rel='noopener'>YouTube &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 08:39 AM PKT</b></div><div class='tl-step wait'><i></i>Goes public <b>22 Nov, 10:00 PM PKT</b></div></div></div></div></li><li class='row with-thumb'><div class='rthumb none'>no thumbnail</div><div class='row-main'><div class='row-title'><a href='https://www.youtube.com/watch?v=TJrPYLYmN6s' target='_blank' rel='noopener'>The Clockwork Assassin of Nuremberg | Pastveil Mysteries | Lost Civilizations</a></div><div class='meta'><span class='chip'>pastveil_mysteries</span><span class='chip'>short</span></div><div class='row-side'><span class='pill ok'>Scheduled on YouTube</span><span class='muted'>22 Nov, 04:00 AM</span></div><div class='tls'><div class='tl'><div class='tl-name'><a href='https://www.youtube.com/watch?v=TJrPYLYmN6s' target='_blank' rel='noopener'>YouTube &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 08:30 AM PKT</b></div><div class='tl-step wait'><i></i>Goes public <b>22 Nov, 04:00 AM PKT</b></div></div></div></div></li><li class='row with-thumb'><img class='rthumb' loading='lazy' src='thumbs/56.jpg' alt=''><div class='row-main'><div class='row-title'><a href='https://www.youtube.com/watch?v=6jDTm16z2ic' target='_blank' rel='noopener'>Could Quantum Entanglement Networks Map the Internal Structure of Black Holes? | Chronovanta</a></div><div class='meta'><span class='chip'>chronovanta</span><span class='chip'>short</span></div><div class='row-side'><span class='pill ok'>Scheduled on YouTube</span><span class='muted'>22 Nov, 11:00 PM</span></div><div class='tls'><div class='tl'><div class='tl-name'><a href='https://www.youtube.com/watch?v=6jDTm16z2ic' target='_blank' rel='noopener'>YouTube &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 04:21 PM PKT</b></div><div class='tl-step wait'><i></i>Goes public <b>22 Nov, 11:00 PM PKT</b></div></div><div class='tl'><div class='tl-name'><a href='https://www.facebook.com/reel/1129302710005828' target='_blank' rel='noopener'>Facebook &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 07:18 AM PKT</b></div><div class='tl-step wait'><i></i>Goes live <b>22 Nov, 11:00 PM PKT</b></div></div></div></div></li><li class='row with-thumb'><div class='rthumb none'>no thumbnail</div><div class='row-main'><div class='row-title'><a href='https://www.youtube.com/watch?v=Igloc23ZpjM' target='_blank' rel='noopener'>Could Photosynthetic Concrete Power Future Megacity Towers by 2060? | Chronovanta | Life In 2050</a></div><div class='meta'><span class='chip'>chronovanta</span><span class='chip'>short</span></div><div class='row-side'><span class='pill ok'>Scheduled on YouTube</span><span class='muted'>22 Nov, 07:00 PM</span></div><div class='tls'><div class='tl'><div class='tl-name'><a href='https://www.youtube.com/watch?v=Igloc23ZpjM' target='_blank' rel='noopener'>YouTube &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 07:05 AM PKT</b></div><div class='tl-step wait'><i></i>Goes public <b>22 Nov, 07:00 PM PKT</b></div></div><div class='tl'><div class='tl-name'><a href='https://www.facebook.com/4496374893965276' target='_blank' rel='noopener'>Facebook &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 07:06 AM PKT</b></div><div class='tl-step wait'><i></i>Goes live <b>22 Nov, 07:00 PM PKT</b></div></div></div></div></li><li class='row with-thumb'><div class='rthumb none'>no thumbnail</div><div class='row-main'><div class='row-title'><a href='https://www.youtube.com/watch?v=rjnPJ51iYC0' target='_blank' rel='noopener'>Could Liquid Metal Circuits Power Autonomous Soft Robots by 2045? | Chronovanta | Future Technology</a></div><div class='meta'><span class='chip'>chronovanta</span><span class='chip'>short</span></div><div class='row-side'><span class='pill ok'>Scheduled on YouTube</span><span class='muted'>22 Nov, 07:00 AM</span></div><div class='tls'><div class='tl'><div class='tl-name'><a href='https://www.youtube.com/watch?v=rjnPJ51iYC0' target='_blank' rel='noopener'>YouTube &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 06:54 AM PKT</b></div><div class='tl-step wait'><i></i>Goes public <b>22 Nov, 07:00 AM PKT</b></div></div><div class='tl'><div class='tl-name'><a href='https://www.facebook.com/reel/2468974563909704' target='_blank' rel='noopener'>Facebook &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 06:55 AM PKT</b></div><div class='tl-step wait'><i></i>Goes live <b>22 Nov, 07:00 AM PKT</b></div></div></div></div></li><li class='row with-thumb'><div class='rthumb none'>no thumbnail</div><div class='row-main'><div class='row-title'>The Hypnotic Light Show of the Hawaiian Bobtail Squid | Pondermals | Animal Facts</div><div class='meta'><span class='chip'>pondermals</span><span class='chip'>long</span></div><div class='reason'>The video was built but could not be uploaded at the time, and its files were only kept for two days.</div><div class='row-side'><span class='pill bad'>Not uploaded · video files expired</span><span class='muted'>21 Nov, 01:44 AM</span></div><div class='tls'><div class='tl'><div class='tl-name'>YouTube</div><div class='tl-step fail'><i></i>Will not upload (files lost)</div></div><div class='tl'><div class='tl-name'>TikTok</div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 01:44 AM PKT</b></div><div class='tl-step done'><i></i>Live since <b>21 Nov, 06:30 AM PKT</b></div></div></div></div></li></ul>
+    </section>
+    <section class="card">
+      <h2>Going public next</h2>
+      <ul class='rows'><li class='row with-thumb'><div class='rthumb none'>no thumbnail</div><div class='row-main'><div class='row-title'><a href='https://www.youtube.com/watch?v=bf8LIVK6nVg' target='_blank' rel='noopener'>The Glass Coffin of King Ludwig | Pastveil Mysteries | Lost Civilizations</a></div><div class='meta'><span class='chip'>pastveil_mysteries</span><span class='chip'>short</span></div><div class='tls'><div class='tl'><div class='tl-name'><a href='https://www.youtube.com/watch?v=bf8LIVK6nVg' target='_blank' rel='noopener'>YouTube &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>20 Nov, 09:19 AM PKT</b></div><div class='tl-step wait'><i></i>Goes public <b>21 Nov, 10:00 PM PKT</b></div></div></div></div></li><li class='row with-thumb'><img class='rthumb' loading='lazy' src='thumbs/46.jpg' alt=''><div class='row-main'><div class='row-title'><a href='https://www.youtube.com/watch?v=YqdcSssW9kw' target='_blank' rel='noopener'>Could Subatomic Interferometry Measure Spacetime Curvature at the Planck Scale? | Chronovanta</a></div><div class='meta'><span class='chip'>chronovanta</span><span class='chip'>short</span></div><div class='tls'><div class='tl'><div class='tl-name'><a href='https://www.youtube.com/watch?v=YqdcSssW9kw' target='_blank' rel='noopener'>YouTube &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>20 Nov, 04:29 PM PKT</b></div><div class='tl-step wait'><i></i>Goes public <b>21 Nov, 11:00 PM PKT</b></div></div><div class='tl'><div class='tl-name'><a href='https://www.facebook.com/reel/1376652631061789' target='_blank' rel='noopener'>Facebook &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>20 Nov, 08:01 AM PKT</b></div><div class='tl-step wait'><i></i>Goes live <b>21 Nov, 11:00 PM PKT</b></div></div></div></div></li><li class='row with-thumb'><div class='rthumb none'>no thumbnail</div><div class='row-main'><div class='row-title'><a href='https://www.youtube.com/watch?v=iSINgZihHcc' target='_blank' rel='noopener'>The Missing Crown Relic | Pastveil Mysteries | Lost Civilizations</a></div><div class='meta'><span class='chip'>pastveil_mysteries</span><span class='chip'>long</span></div><div class='tls'><div class='tl'><div class='tl-name'><a href='https://www.youtube.com/watch?v=iSINgZihHcc' target='_blank' rel='noopener'>YouTube &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>20 Nov, 09:00 AM PKT</b></div><div class='tl-step wait'><i></i>Goes public <b>22 Nov, 01:00 AM PKT</b></div></div></div></div></li><li class='row with-thumb'><div class='rthumb none'>no thumbnail</div><div class='row-main'><div class='row-title'><a href='https://www.youtube.com/watch?v=TJrPYLYmN6s' target='_blank' rel='noopener'>The Clockwork Assassin of Nuremberg | Pastveil Mysteries | Lost Civilizations</a></div><div class='meta'><span class='chip'>pastveil_mysteries</span><span class='chip'>short</span></div><div class='tls'><div class='tl'><div class='tl-name'><a href='https://www.youtube.com/watch?v=TJrPYLYmN6s' target='_blank' rel='noopener'>YouTube &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 08:30 AM PKT</b></div><div class='tl-step wait'><i></i>Goes public <b>22 Nov, 04:00 AM PKT</b></div></div></div></div></li><li class='row with-thumb'><div class='rthumb none'>no thumbnail</div><div class='row-main'><div class='row-title'><a href='https://www.youtube.com/watch?v=rjnPJ51iYC0' target='_blank' rel='noopener'>Could Liquid Metal Circuits Power Autonomous Soft Robots by 2045? | Chronovanta | Future Technology</a></div><div class='meta'><span class='chip'>chronovanta</span><span class='chip'>short</span></div><div class='tls'><div class='tl'><div class='tl-name'><a href='https://www.youtube.com/watch?v=rjnPJ51iYC0' target='_blank' rel='noopener'>YouTube &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 06:54 AM PKT</b></div><div class='tl-step wait'><i></i>Goes public <b>22 Nov, 07:00 AM PKT</b></div></div><div class='tl'><div class='tl-name'><a href='https://www.facebook.com/reel/2468974563909704' target='_blank' rel='noopener'>Facebook &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 06:55 AM PKT</b></div><div class='tl-step wait'><i></i>Goes live <b>22 Nov, 07:00 AM PKT</b></div></div></div></div></li><li class='row with-thumb'><div class='rthumb none'>no thumbnail</div><div class='row-main'><div class='row-title'><a href='https://www.youtube.com/watch?v=Igloc23ZpjM' target='_blank' rel='noopener'>Could Photosynthetic Concrete Power Future Megacity Towers by 2060? | Chronovanta | Life In 2050</a></div><div class='meta'><span class='chip'>chronovanta</span><span class='chip'>short</span></div><div class='tls'><div class='tl'><div class='tl-name'><a href='https://www.youtube.com/watch?v=Igloc23ZpjM' target='_blank' rel='noopener'>YouTube &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 07:05 AM PKT</b></div><div class='tl-step wait'><i></i>Goes public <b>22 Nov, 07:00 PM PKT</b></div></div><div class='tl'><div class='tl-name'><a href='https://www.facebook.com/4496374893965276' target='_blank' rel='noopener'>Facebook &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 07:06 AM PKT</b></div><div class='tl-step wait'><i></i>Goes live <b>22 Nov, 07:00 PM PKT</b></div></div></div></div></li><li class='row with-thumb'><div class='rthumb none'>no thumbnail</div><div class='row-main'><div class='row-title'><a href='https://www.youtube.com/watch?v=JMaAKcqX9oI' target='_blank' rel='noopener'>The Vanishing Ink of the Vinland Map | Pastveil Mysteries | Lost Civilizations</a></div><div class='meta'><span class='chip'>pastveil_mysteries</span><span class='chip'>short</span></div><div class='tls'><div class='tl'><div class='tl-name'><a href='https://www.youtube.com/watch?v=JMaAKcqX9oI' target='_blank' rel='noopener'>YouTube &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 08:39 AM PKT</b></div><div class='tl-step wait'><i></i>Goes public <b>22 Nov, 10:00 PM PKT</b></div></div></div></div></li><li class='row with-thumb'><img class='rthumb' loading='lazy' src='thumbs/56.jpg' alt=''><div class='row-main'><div class='row-title'><a href='https://www.youtube.com/watch?v=6jDTm16z2ic' target='_blank' rel='noopener'>Could Quantum Entanglement Networks Map the Internal Structure of Black Holes? | Chronovanta</a></div><div class='meta'><span class='chip'>chronovanta</span><span class='chip'>short</span></div><div class='tls'><div class='tl'><div class='tl-name'><a href='https://www.youtube.com/watch?v=6jDTm16z2ic' target='_blank' rel='noopener'>YouTube &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 04:21 PM PKT</b></div><div class='tl-step wait'><i></i>Goes public <b>22 Nov, 11:00 PM PKT</b></div></div><div class='tl'><div class='tl-name'><a href='https://www.facebook.com/reel/1129302710005828' target='_blank' rel='noopener'>Facebook &#8599;</a></div><div class='tl-step done'><i></i>Uploaded <b>21 Nov, 07:18 AM PKT</b></div><div class='tl-step wait'><i></i>Goes live <b>22 Nov, 11:00 PM PKT</b></div></div></div></div></li></ul>
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="card">
+      <h2>On Facebook <small>videos and posts, newest first</small></h2>
+      <ul class='rows'><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/reel/1129302710005828' target='_blank' rel='noopener'>Could Quantum Entanglement Networks Map the Internal Structure of Black Holes? | Chronovanta</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Reel</span></div><a class='url' href='https://www.facebook.com/reel/1129302710005828' target='_blank' rel='noopener'>facebook.com/reel/1129302710005828</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>21 Nov, 07:18 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/4496374893965276' target='_blank' rel='noopener'>Could Photosynthetic Concrete Power Future Megacity Towers by 2060? | Chronovanta | Life In 2050</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Reel</span></div><a class='url' href='https://www.facebook.com/4496374893965276' target='_blank' rel='noopener'>facebook.com/4496374893965276</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>21 Nov, 07:06 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/reel/2468974563909704' target='_blank' rel='noopener'>Could Liquid Metal Circuits Power Autonomous Soft Robots by 2045? | Chronovanta | Future Technology</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Reel</span></div><a class='url' href='https://www.facebook.com/reel/2468974563909704' target='_blank' rel='noopener'>facebook.com/reel/2468974563909704</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>21 Nov, 06:55 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/122113246953535084' target='_blank' rel='noopener'>Could Synthetic Photosynthesis Power Future Mega Cities?</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Picture post</span></div><a class='url' href='https://www.facebook.com/122113246953535084' target='_blank' rel='noopener'>facebook.com/122113246953535084</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>21 Nov, 01:44 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/reel/1376652631061789' target='_blank' rel='noopener'>Could Subatomic Interferometry Measure Spacetime Curvature at the Planck Scale? | Chronovanta</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Reel</span></div><a class='url' href='https://www.facebook.com/reel/1376652631061789' target='_blank' rel='noopener'>facebook.com/reel/1376652631061789</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>20 Nov, 08:01 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/1671549050987107' target='_blank' rel='noopener'>Could Global Energy Networks Reach Type 1 Status by 2100? | Chronovanta | Future Technology</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Reel</span></div><a class='url' href='https://www.facebook.com/1671549050987107' target='_blank' rel='noopener'>facebook.com/1671549050987107</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>20 Nov, 07:47 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/reel/1453519282894097' target='_blank' rel='noopener'>Could Automated Scaffold Cleaning Drones Restore Los Angeles Skyscrapers by 2040? | Chronovanta</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Reel</span></div><a class='url' href='https://www.facebook.com/reel/1453519282894097' target='_blank' rel='noopener'>facebook.com/reel/1453519282894097</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>20 Nov, 07:37 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/2412021569205453' target='_blank' rel='noopener'>Could Next Generation Models Finally Master True Reasoning? | Chronovanta | Future Technology</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Video</span></div><a class='url' href='https://www.facebook.com/2412021569205453' target='_blank' rel='noopener'>facebook.com/2412021569205453</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>20 Nov, 07:26 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/122112863301535084' target='_blank' rel='noopener'>Could Floating Forests Rebuild Our Deep Oceans?</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Picture post</span></div><a class='url' href='https://www.facebook.com/122112863301535084' target='_blank' rel='noopener'>facebook.com/122112863301535084</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>20 Nov, 02:11 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/1076374355410486' target='_blank' rel='noopener'>Could 2026 Shifts Reshape Global Urban Infrastructures? | Chronovanta | Future Technology</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Video</span></div><a class='url' href='https://www.facebook.com/1076374355410486' target='_blank' rel='noopener'>facebook.com/1076374355410486</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>20 Nov, 01:34 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/3563031827209166' target='_blank' rel='noopener'>Could Underwater Laser Arrays Protect Farmed Fish? | Chronovanta | Future Technology</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Reel</span></div><a class='url' href='https://www.facebook.com/3563031827209166' target='_blank' rel='noopener'>facebook.com/3563031827209166</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>19 Nov, 07:44 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/reel/1688148236313180' target='_blank' rel='noopener'>Could Quantum Sensors Map Earth&#x27;s Deep Mantle by 2045? | Chronovanta | Future Technology</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Reel</span></div><a class='url' href='https://www.facebook.com/reel/1688148236313180' target='_blank' rel='noopener'>facebook.com/reel/1688148236313180</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>19 Nov, 07:27 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/1122760853677150' target='_blank' rel='noopener'>Could Autonomous Software Agents Negotiate Global Markets by 2038? | Chronovanta | Future Technology</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Reel</span></div><a class='url' href='https://www.facebook.com/1122760853677150' target='_blank' rel='noopener'>facebook.com/1122760853677150</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>19 Nov, 07:08 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/122112414513535084' target='_blank' rel='noopener'>Could Atmospheric Water Harvesters Sustain Arid Cities?</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Picture post</span></div><a class='url' href='https://www.facebook.com/122112414513535084' target='_blank' rel='noopener'>facebook.com/122112414513535084</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>19 Nov, 12:30 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/reel/1501773008493179' target='_blank' rel='noopener'>Could Rotating Space Habitats Spin Up Earth Gravity by 2075? | Chronovanta | Future Technology</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Reel</span></div><a class='url' href='https://www.facebook.com/reel/1501773008493179' target='_blank' rel='noopener'>facebook.com/reel/1501773008493179</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>18 Nov, 08:29 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/1143550361489905' target='_blank' rel='noopener'>Could Automated Rail Networks Transform Siberian Freight by 2045? | Chronovanta | Future Technology</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Reel</span></div><a class='url' href='https://www.facebook.com/1143550361489905' target='_blank' rel='noopener'>facebook.com/1143550361489905</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>18 Nov, 08:19 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/reel/1361972175889817' target='_blank' rel='noopener'>Could Atmospheric Shielding Protect Orbital Outposts From Solar Flares by 2050? | Chronovanta</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Reel</span></div><a class='url' href='https://www.facebook.com/reel/1361972175889817' target='_blank' rel='noopener'>facebook.com/reel/1361972175889817</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>18 Nov, 08:07 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/1454220442803090' target='_blank' rel='noopener'>Could Hydrogen Fuel Cells Power the Next Generation of Autonomous Artificial Intelligence? | Chronov</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Video</span></div><a class='url' href='https://www.facebook.com/1454220442803090' target='_blank' rel='noopener'>facebook.com/1454220442803090</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>18 Nov, 07:53 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/122111947251535084' target='_blank' rel='noopener'>Could Living Brain Tissue Power Future Computers?</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Picture post</span></div><a class='url' href='https://www.facebook.com/122111947251535084' target='_blank' rel='noopener'>facebook.com/122111947251535084</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>18 Nov, 03:23 AM</span></div></li><li class='row'><div class='row-main'><div class='row-title'><a href='https://www.facebook.com/984421127609176' target='_blank' rel='noopener'>Could Frontier Intelligence Redefine Global Computing Limits? | Chronovanta | Future Technology</a></div><div class='meta'><span class='chip'>Chronovanta</span><span class='chip'>Video</span></div><a class='url' href='https://www.facebook.com/984421127609176' target='_blank' rel='noopener'>facebook.com/984421127609176</a></div><div class='row-side'><span class='pill ok'>Live on Facebook</span><span class='muted'>18 Nov, 01:38 AM</span></div></li></ul>
+    </section>
+    <section class="card">
+      <h2>Uploads <small>last 7 days</small></h2>
+      <div class='tbl'><table class='week'><thead><tr><th>Day</th><th>Chronovanta</th><th>Pastveil Mysteries</th><th>Pondermals</th><th>Total</th></tr></thead><tbody><tr><th scope='row'>Sun 15 Nov</th><td><span class='heat' style='--a:0.00'>·</span></td><td><span class='heat' style='--a:0.00'>·</span></td><td><span class='heat' style='--a:0.00'>·</span></td><td class='total'>0</td></tr><tr><th scope='row'>Mon 16 Nov</th><td><span class='heat' style='--a:0.75'>3</span></td><td><span class='heat' style='--a:0.25'>1</span></td><td><span class='heat' style='--a:0.00'>·</span></td><td class='total'>4</td></tr><tr><th scope='row'>Tue 17 Nov</th><td><span class='heat' style='--a:1.00'>4</span></td><td><span class='heat' style='--a:1.00'>4</span></td><td><span class='heat' style='--a:0.25'>1</span></td><td class='total'>9</td></tr><tr><th scope='row'>Wed 18 Nov</th><td><span class='heat' style='--a:1.00'>4</span></td><td><span class='heat' style='--a:0.75'>3</span></td><td><span class='heat' style='--a:0.00'>·</span></td><td class='total'>7</td></tr><tr><th scope='row'>Thu 19 Nov</th><td><span class='heat' style='--a:0.75'>3</span></td><td><span class='heat' style='--a:0.50'>2</span></td><td><span class='heat' style='--a:0.00'>·</span></td><td class='total'>5</td></tr><tr><th scope='row'>Fri 20 Nov</th><td><span class='heat' style='--a:1.00'>4</span></td><td><span class='heat' style='--a:1.00'>4</span></td><td><span class='heat' style='--a:0.00'>·</span></td><td class='total'>8</td></tr><tr><th scope='row'>Sat 21 Nov</th><td><span class='heat' style='--a:0.75'>3</span></td><td><span class='heat' style='--a:0.50'>2</span></td><td><span class='heat' style='--a:0.00'>·</span></td><td class='total'>5</td></tr></tbody></table></div>
+    </section>
+    <section class="card">
+      <h2>Latest videos</h2>
+      <div class='vids'>
+    <a class="vid" href="https://www.youtube.com/watch?v=6jDTm16z2ic" target="_blank" rel="noopener">
+      <img loading="lazy" src="https://i.ytimg.com/vi/6jDTm16z2ic/mqdefault.jpg" alt="">
+      <div class="vid-body">
+        <div class="vid-title">Could Quantum Entanglement Networks Map the Internal Structure of Black Holes? | Chronovanta</div>
+        <div class="meta"><span class='chip'>chronovanta</span><span class='chip'>short</span><span class="muted">Goes public 22 Nov, 11:00 PM</span></div>
+      </div>
+    </a>
+    <a class="vid" href="https://www.youtube.com/watch?v=JMaAKcqX9oI" target="_blank" rel="noopener">
+      <img loading="lazy" src="https://i.ytimg.com/vi/JMaAKcqX9oI/mqdefault.jpg" alt="">
+      <div class="vid-body">
+        <div class="vid-title">The Vanishing Ink of the Vinland Map | Pastveil Mysteries | Lost Civilizations</div>
+        <div class="meta"><span class='chip'>pastveil_mysteries</span><span class='chip'>short</span><span class="muted">Goes public 22 Nov, 10:00 PM</span></div>
+      </div>
+    </a>
+    <a class="vid" href="https://www.youtube.com/watch?v=TJrPYLYmN6s" target="_blank" rel="noopener">
+      <img loading="lazy" src="https://i.ytimg.com/vi/TJrPYLYmN6s/mqdefault.jpg" alt="">
+      <div class="vid-body">
+        <div class="vid-title">The Clockwork Assassin of Nuremberg | Pastveil Mysteries | Lost Civilizations</div>
+        <div class="meta"><span class='chip'>pastveil_mysteries</span><span class='chip'>short</span><span class="muted">Goes public 22 Nov, 04:00 AM</span></div>
+      </div>
+    </a>
+    <a class="vid" href="https://www.youtube.com/watch?v=Igloc23ZpjM" target="_blank" rel="noopener">
+      <img loading="lazy" src="https://i.ytimg.com/vi/Igloc23ZpjM/mqdefault.jpg" alt="">
+      <div class="vid-body">
+        <div class="vid-title">Could Photosynthetic Concrete Power Future Megacity Towers by 2060? | Chronovanta | Life In 2050</div>
+        <div class="meta"><span class='chip'>chronovanta</span><span class='chip'>short</span><span class="muted">Goes public 22 Nov, 07:00 PM</span></div>
+      </div>
+    </a>
+    <a class="vid" href="https://www.youtube.com/watch?v=rjnPJ51iYC0" target="_blank" rel="noopener">
+      <img loading="lazy" src="https://i.ytimg.com/vi/rjnPJ51iYC0/mqdefault.jpg" alt="">
+      <div class="vid-body">
+        <div class="vid-title">Could Liquid Metal Circuits Power Autonomous Soft Robots by 2045? | Chronovanta | Future Technology</div>
+        <div class="meta"><span class='chip'>chronovanta</span><span class='chip'>short</span><span class="muted">Goes public 22 Nov, 07:00 AM</span></div>
+      </div>
+    </a>
+    <a class="vid" href="https://www.youtube.com/watch?v=YqdcSssW9kw" target="_blank" rel="noopener">
+      <img loading="lazy" src="https://i.ytimg.com/vi/YqdcSssW9kw/mqdefault.jpg" alt="">
+      <div class="vid-body">
+        <div class="vid-title">Could Subatomic Interferometry Measure Spacetime Curvature at the Planck Scale? | Chronovanta</div>
+        <div class="meta"><span class='chip'>chronovanta</span><span class='chip'>short</span><span class="muted">Goes public 21 Nov, 11:00 PM</span></div>
+      </div>
+    </a>
+    <a class="vid" href="https://www.youtube.com/watch?v=l3yDbGx1mak" target="_blank" rel="noopener">
+      <img loading="lazy" src="https://i.ytimg.com/vi/l3yDbGx1mak/mqdefault.jpg" alt="">
+      <div class="vid-body">
+        <div class="vid-title">Could Global Energy Networks Reach Type 1 Status by 2100? | Chronovanta | Future Technology</div>
+        <div class="meta"><span class='chip'>chronovanta</span><span class='chip'>short</span><span class="muted">Goes public 21 Nov, 07:00 PM</span></div>
+      </div>
+    </a>
+    <a class="vid" href="https://www.youtube.com/watch?v=bf8LIVK6nVg" target="_blank" rel="noopener">
+      <img loading="lazy" src="https://i.ytimg.com/vi/bf8LIVK6nVg/mqdefault.jpg" alt="">
+      <div class="vid-body">
+        <div class="vid-title">The Glass Coffin of King Ludwig | Pastveil Mysteries | Lost Civilizations</div>
+        <div class="meta"><span class='chip'>pastveil_mysteries</span><span class='chip'>short</span><span class="muted">Goes public 21 Nov, 10:00 PM</span></div>
+      </div>
+    </a>
+    <a class="vid" href="https://www.youtube.com/watch?v=EzTJ2P5aOA4" target="_blank" rel="noopener">
+      <img loading="lazy" src="https://i.ytimg.com/vi/EzTJ2P5aOA4/mqdefault.jpg" alt="">
+      <div class="vid-body">
+        <div class="vid-title">The Bronze Mirror of Queen Himiko | Pastveil Mysteries | Lost Civilizations</div>
+        <div class="meta"><span class='chip'>pastveil_mysteries</span><span class='chip'>short</span><span class="muted">Goes public 21 Nov, 04:00 AM</span></div>
+      </div>
+    </a>
+    <a class="vid" href="https://www.youtube.com/watch?v=iSINgZihHcc" target="_blank" rel="noopener">
+      <img loading="lazy" src="https://i.ytimg.com/vi/iSINgZihHcc/mqdefault.jpg" alt="">
+      <div class="vid-body">
+        <div class="vid-title">The Missing Crown Relic | Pastveil Mysteries | Lost Civilizations</div>
+        <div class="meta"><span class='chip'>pastveil_mysteries</span><span class='chip'>long</span><span class="muted">Goes public 22 Nov, 01:00 AM</span></div>
+      </div>
+    </a>
+    <a class="vid" href="https://www.youtube.com/watch?v=iqb7C6VPkhY" target="_blank" rel="noopener">
+      <img loading="lazy" src="https://i.ytimg.com/vi/iqb7C6VPkhY/mqdefault.jpg" alt="">
+      <div class="vid-body">
+        <div class="vid-title">Could Automated Scaffold Cleaning Drones Restore Los Angeles Skyscrapers by 2040? | Chronovanta</div>
+        <div class="meta"><span class='chip'>chronovanta</span><span class='chip'>short</span><span class="muted">Goes public 21 Nov, 07:00 AM</span></div>
+      </div>
+    </a>
+    <a class="vid" href="https://www.youtube.com/watch?v=JQcPTRCodqs" target="_blank" rel="noopener">
+      <img loading="lazy" src="https://i.ytimg.com/vi/JQcPTRCodqs/mqdefault.jpg" alt="">
+      <div class="vid-body">
+        <div class="vid-title">The St. Patrick’s Codex Mystery | Pastveil Mysteries | Lost Civilizations</div>
+        <div class="meta"><span class='chip'>pastveil_mysteries</span><span class='chip'>long</span><span class="muted">Goes public 21 Nov, 01:00 AM</span></div>
+      </div>
+    </a></div>
+    </section>
+  </div>
+</main>
+
+<footer class="wrap">
+  Built automatically by the daily GitHub Actions run. This page only reports —
+  to build or upload something, use <b>Actions → Daily videos → Run workflow</b>.<br>
+  <a href="privacy.html">Privacy policy</a> · <a href="terms.html">Terms of service</a>
+</footer>
+</body></html>
